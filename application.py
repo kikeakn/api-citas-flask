@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -42,7 +44,8 @@ swagger = Swagger(app, template={
     "security": [{"Bearer": []}]
 })
 
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+myclient = pymongo.MongoClient(mongo_uri)
 
 
 @app.route('/', methods=['GET'])

@@ -1,67 +1,54 @@
-# Proyecto API con Flask y MongoDB
+# API de Citas con Flask y MongoDB
 
-Este proyecto es una API desarrollada en Flask que utiliza MongoDB como base de datos.
+API sencilla para gestionar usuarios, centros y citas médicas usando Flask, JWT y MongoDB.
 
-## Instalación y Configuración
+## Requisitos previos
+- Python 3.10 o superior
+- MongoDB en ejecución y accesible
+- (Opcional) Entorno virtual para aislar dependencias
 
-### 1. Crear y Activar un Entorno Virtual (venv)
+## Configuración del entorno
+1. Clona el repositorio y entra en la carpeta del proyecto.
+2. Crea y activa un entorno virtual (recomendado):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. Instala las dependencias:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Antes de instalar las dependencias, es recomendable crear un entorno virtual para el proyecto:
-
+## Variables de entorno
+Configura la conexión a MongoDB y Flask (usa los valores por defecto si no las defines):
 ```bash
-# En Windows (USAMOS CMD)
-python -m venv venv
-.\venv\Scripts\activate.bat
-
-# En macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 2. Instalar Dependencias
-
-Una vez activado el entorno virtual, instala las dependencias del proyecto desde `requirements.txt`:
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Configurar Variables de Entorno
-
-Para ejecutar Flask correctamente, define las siguientes variables de entorno:
-
-```bash
-# En Windows (cmd)
-set FLASK_APP=application.py
-set FLASK_ENV=development
-
-# En macOS/Linux
+export MONGODB_URI="mongodb://localhost:27017/"
+export MONGODB_DB="Clinica"
 export FLASK_APP=application.py
 export FLASK_ENV=development
 ```
 
-### 4. Ejecutar el Servidor Flask
+## Ejecución de migraciones
+Ejecuta el script de migración para crear las colecciones, índices y centros de ejemplo:
+```bash
+python migrations/001_init_clinica.py
+```
+El script usa `MONGODB_URI` y `MONGODB_DB` para conectarse.
 
-Ejecuta el siguiente comando para iniciar el servidor y que sea accesible en la red local:
-
+## Iniciar la API
+Arranca el servidor de desarrollo en la red local:
 ```bash
 flask run --host=0.0.0.0 --port=5000
 ```
+La documentación Swagger estará disponible en `http://localhost:5000/apidocs`.
 
-El servidor se ejecutará en `http://0.0.0.0:5000/` y será accesible en la red local.
+## Flujos básicos
+- **Registro**: `POST /register` con `username`, `password` y datos del usuario.
+- **Login**: `POST /login` devuelve un token JWT.
+- **Centros**: `GET /centers` requiere token en el encabezado `Authorization: Bearer <token>`.
+- **Citas**: Endpoints `/date/create`, `/date/getByDay`, `/date/getByUser`, `/date/delete` y `/dates` para gestionar citas.
 
----
-
-## Configuración de la Base de Datos MongoDB
-
-Para que la API funcione correctamente, debes hacer una llamada a la url de la api /migracion para que se agregen los cambos a la base de datos
-
----
-
-## Notas Adicionales
-
-- Asegúrate de que MongoDB esté corriendo antes de iniciar la API.
-- Para probar la API, puedes usar herramientas como Postman o `curl`.
-- La documentación de la API está disponible en `/apidocs` mediante Swagger.
-
----
+## Notas
+- Ejecuta el script de migración cada vez que montes un entorno nuevo.
+- Asegúrate de que MongoDB esté en marcha antes de iniciar la API.
+- Utiliza herramientas como Postman o `curl` para probar los endpoints.
