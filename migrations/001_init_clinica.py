@@ -7,13 +7,14 @@ import os
 from typing import Iterable
 
 import pymongo
+from pymongo.database import Database  # <-- importamos Database desde pymongo.database
 
 
 MONGO_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
 DB_NAME = os.environ.get("MONGODB_DB", "Clinica")
 
 
-def ensure_collections(db: pymongo.database.Database, names: Iterable[str]) -> None:
+def ensure_collections(db: Database, names: Iterable[str]) -> None:
     """Crea las colecciones listadas si no existen todavía."""
     existing = set(db.list_collection_names())
     for name in names:
@@ -21,7 +22,7 @@ def ensure_collections(db: pymongo.database.Database, names: Iterable[str]) -> N
             db.create_collection(name)
 
 
-def ensure_indexes(db: pymongo.database.Database) -> None:
+def ensure_indexes(db: Database) -> None:
     """Configura índices básicos para las colecciones principales."""
     db["usuarios"].create_index("username", unique=True)
     db["citas"].create_index(
@@ -31,7 +32,7 @@ def ensure_indexes(db: pymongo.database.Database) -> None:
     )
 
 
-def seed_centers(db: pymongo.database.Database) -> None:
+def seed_centers(db: Database) -> None:
     """Inserta centros por defecto si la colección está vacía."""
     if db["centros"].count_documents({}) > 0:
         return
@@ -52,7 +53,7 @@ def seed_centers(db: pymongo.database.Database) -> None:
 
 def main() -> None:
     client = pymongo.MongoClient(MONGO_URI)
-    db = client[DB_NAME]
+    db: Database = client[DB_NAME]
 
     ensure_collections(db, ["usuarios", "centros", "citas"])
     ensure_indexes(db)
