@@ -1,45 +1,57 @@
 # tests/conftest.py
 import pytest
-from application import app, myclient  # myclient es el MongoClient global
+import mongomock
+
+import application  # importamos el módulo entero
 
 
-DB_NAME = "Clinica"  # misma que la app; solo borramos datos de pruebas
+DB_NAME = "Clinica"
 
 
-def _reset_database():
-    """Deja la BD en un estado conocido SOLO para los usuarios de test."""
-    db = myclient[DB_NAME]
+def _setup_test_db():
+    """
+    Prepara una base de datos en memoria para los tests usando mongomock.
+    No necesita mongod ni tocar nada del servidor.
+    """
+    # 1) Crear un cliente de Mongo simulado
+    mock_client = mongomock.MongoClient()
 
-    # Borrar solo los usuarios de prueba que crean los tests
-    db["usuarios"].delete_many(
-        {"username": {"$in": ["usuario_test", "user_dates"]}}
+    # 2) Sustituir el cliente real de la app por el simulado
+    application.myclient = mock_client
+
+    # 3) Trabajar con la BD "Clinica" dentro de este cliente falso
+    db = mock_client[DB_NAME]
+
+    # Limpiar colecciones relevantes
+    db["usuarios"].delete_many({})
+    db["citas"].delete_many({})
+    db["centros"].delete_many({})
+
+    # Semilla mínima de centros para que los tests tengan datos coherentes
+    db["centros"].insert_many(
+        [
+            {
+                "name": "Centro de Salud Madrid Norte",
+                "address": "Calle de la Salud, 123, Madrid",
+            },
+            {
+                "name": "Centro Médico Madrid Sur",
+                "address": "Avenida de la Medicina, 456, Madrid",
+            },
+        ]
     )
 
-    # Borrar solo citas de esos usuarios
-    db["citas"].delete_many(
-        {"user": {"$in": ["usuario_test", "user_dates"]}}
-    )
-
-    # Centros: si están vacíos, los creamos; si ya hay, no tocamos nada
-    if db["centros"].count_documents({}) == 0:
-        db["centros"].insert_many(
-            [
-                {
-                    "name": "Centro de Salud Madrid Norte",
-                    "address": "Calle de la Salud, 123, Madrid",
-                },
-                {
-                    "name": "Centro Médico Madrid Sur",
-                    "address": "Avenida de la Medicina, 456, Madrid",
-                },
-            ]
-        )
+    return mock_client
 
 
 @pytest.fixture
 def client():
-    app.config["TESTING"] = True
-    _reset_database()
+    """
+    Fixture de pytest que devuelve un test_client de Flask
+    con una BD limpia en cada test.
+    """
+    application.app.config["TESTING"] = True
+    _setup_test_db()
 
-    with app.test_client() as client:
+    with application.app.test_client() as client:
         yield client
