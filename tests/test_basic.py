@@ -1,10 +1,25 @@
+# tests/test_basic.py
+import pytest
+
+import application
+
+
+@pytest.fixture
+def client():
+    app = application.app
+    app.config["TESTING"] = True
+
+    with app.test_client() as client:
+        yield client
+
+
 def test_root_endpoint(client):
     resp = client.get("/")
     assert resp.status_code == 200
-    assert b"Hello, World!" in resp.data
+    # Buscamos nuestro mensaje dentro del HTML
+    assert b"Hello, World, soy Enrique" in resp.data
 
 
 def test_apidocs_accessible(client):
-    resp = client.get("/apidocs")
-    # Puede devolver 200 o redirigir a /apidocs/
-    assert resp.status_code in (200, 301, 302, 308)
+    resp = client.get("/apidocs/")
+    assert resp.status_code == 200
