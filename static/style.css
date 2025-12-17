@@ -1,0 +1,5 @@
+body { font-family: Arial, sans-serif; background:#f6f6f6; margin:0; }
+.card { max-width: 720px; margin: 60px auto; background:#fff; padding: 24px; border-radius: 12px; }
+a { color: #0b5; text-decoration: none; }
+a:hover { text-decoration: underline; }
+

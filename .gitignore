@@ -1,9 +1,12 @@
-./venv/
-./venv/*
-./__pycache__
-./__pycache__/*
-./.vscode/
-./.vscode/*
+# Entornos / cache
+venv/
+.venv/
 __pycache__/
+.pytest_cache/
 *.pyc
+.vscode/
+
+# Carpetas tuyas
+.BACKUP/
 proyectopython/
+.env

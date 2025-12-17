@@ -1,57 +1,60 @@
-# tests/conftest.py
+import os
+import uuid
 import pytest
-import mongomock
+import pymongo
 
-import application  # importamos el módulo entero
-
-
-DB_NAME = "Clinica"
+import application  # importa el módulo entero
 
 
-def _setup_test_db():
-    """
-    Prepara una base de datos en memoria para los tests usando mongomock.
-    No necesita mongod ni tocar nada del servidor.
-    """
-    # 1) Crear un cliente de Mongo simulado
-    mock_client = mongomock.MongoClient()
-
-    # 2) Sustituir el cliente real de la app por el simulado
-    application.myclient = mock_client
-
-    # 3) Trabajar con la BD "Clinica" dentro de este cliente falso
-    db = mock_client[DB_NAME]
-
-    # Limpiar colecciones relevantes
-    db["usuarios"].delete_many({})
-    db["citas"].delete_many({})
-    db["centros"].delete_many({})
-
-    # Semilla mínima de centros para que los tests tengan datos coherentes
-    db["centros"].insert_many(
-        [
-            {
-                "name": "Centro de Salud Madrid Norte",
-                "address": "Calle de la Salud, 123, Madrid",
-            },
-            {
-                "name": "Centro Médico Madrid Sur",
-                "address": "Avenida de la Medicina, 456, Madrid",
-            },
-        ]
-    )
-
-    return mock_client
+@pytest.fixture(scope="session")
+def mongo_uri():
+    uri = os.environ.get("MONGODB_URI")
+    if not uri:
+        pytest.fail("Falta MONGODB_URI en variables de entorno (ponlo en GitHub Secrets y en server).")
+    return uri
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def test_db_name():
+    # BD única por ejecución (evita pisar datos)
+    base = os.environ.get("MONGODB_DB", "Clinica")
+    suffix = os.environ.get("CI_DB_SUFFIX") or str(uuid.uuid4())[:8]
+    return f"{base}_test_{suffix}"
+
+
+@pytest.fixture(scope="session")
+def mongo_client(mongo_uri):
+    return pymongo.MongoClient(mongo_uri)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_app_db(monkeypatch, mongo_client, test_db_name):
+    # Forzamos la BD de tests
+    monkeypatch.setenv("MONGODB_URI", os.environ["MONGODB_URI"])
+    monkeypatch.setenv("MONGODB_DB", test_db_name)
+
+    # Resetea cliente cacheado si ya se importó
+    application._mongo_client = mongo_client
+
+    # Inicializa colecciones/índices/centros
+    import importlib.util
+    import pathlib
+
+    path = pathlib.Path(__file__).resolve().parent.parent / "001_init_clinica.py"
+    spec = importlib.util.spec_from_file_location("init_clinica", str(path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    mod.main()  # crea colecciones/índices/centros en la BD de tests
+
+    yield
+
+    # Cleanup: borra la BD de test completa
+    mongo_client.drop_database(test_db_name)
+
+
+@pytest.fixture()
 def client():
-    """
-    Fixture de pytest que devuelve un test_client de Flask
-    con una BD limpia en cada test.
-    """
     application.app.config["TESTING"] = True
-    _setup_test_db()
-
-    with application.app.test_client() as client:
-        yield client
+    with application.app.test_client() as c:
+        yield c

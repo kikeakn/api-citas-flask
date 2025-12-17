@@ -1,10 +1,11 @@
 import json
-
+import uuid
 
 def test_register_login_and_get_centers(client):
     # 1. Registro de usuario
+    username = "usuario_test_" + uuid.uuid4().hex[:6]
     register_payload = {
-        "username": "usuario_test",
+        "username": username,
         "password": "password_test",
         "name": "Nombre",
         "lastname": "Apellido",
@@ -21,7 +22,7 @@ def test_register_login_and_get_centers(client):
     assert r.status_code == 200
 
     # 2. Login
-    login_payload = {"username": "usuario_test", "password": "password_test"}
+    login_payload = {"username": username, "password": "password_test"}
     r = client.post(
         "/login",
         data=json.dumps(login_payload),

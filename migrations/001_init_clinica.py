@@ -1,69 +1,57 @@
-"""Script de migración inicial para la base de datos Clinica.
-
-Crea las colecciones necesarias y añade índices y datos de ejemplo
-para que la API pueda funcionar desde el primer arranque.
-"""
 import os
-from typing import Iterable
-
 import pymongo
-from pymongo.database import Database  # <-- importamos Database desde pymongo.database
 
 
-MONGO_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
-DB_NAME = os.environ.get("MONGODB_DB", "Clinica")
-
-
-def ensure_collections(db: Database, names: Iterable[str]) -> None:
-    """Crea las colecciones listadas si no existen todavía."""
-    existing = set(db.list_collection_names())
-    for name in names:
-        if name not in existing:
-            db.create_collection(name)
-
-
-def ensure_indexes(db: Database) -> None:
-    """Configura índices básicos para las colecciones principales."""
-    db["usuarios"].create_index("username", unique=True)
-    db["citas"].create_index(
-        [("day", pymongo.ASCENDING), ("hour", pymongo.ASCENDING), ("center", pymongo.ASCENDING)],
-        unique=True,
-        name="unique_date_per_center",
-    )
-
-
-def seed_centers(db: Database) -> None:
-    """Inserta centros por defecto si la colección está vacía."""
-    if db["centros"].count_documents({}) > 0:
-        return
-
-    db["centros"].insert_many(
-        [
-            {
-                "name": "Centro de Salud Madrid Norte",
-                "address": "Calle de la Salud, 123, Madrid",
-            },
-            {
-                "name": "Centro Médico Madrid Sur",
-                "address": "Avenida de la Medicina, 456, Madrid",
-            },
-        ]
-    )
+def _load_dotenv(path: str = ".env") -> None:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip('"').strip("'")
+                os.environ.setdefault(k, v)
+    except FileNotFoundError:
+        pass
 
 
 def main() -> None:
-    client = pymongo.MongoClient(MONGO_URI)
-    db: Database = client[DB_NAME]
+    _load_dotenv()
 
-    ensure_collections(db, ["usuarios", "centros", "citas"])
-    ensure_indexes(db)
-    seed_centers(db)
-
-    print(
-        "Migración completada. Base de datos '{db}' en '{uri}' lista para usarse.".format(
-            db=DB_NAME, uri=MONGO_URI
-        )
+    mongo_uri = (
+        os.environ.get("MONGODB_URI")
+        or os.environ.get("MONGODB_URI_EACON")
+        or "mongodb://localhost:27017/"
     )
+
+    client = pymongo.MongoClient(mongo_uri)
+
+    db = client["Clinica"]
+    usuarios = db["usuarios"]
+    centros = db["centros"]
+    citas = db["citas"]
+
+    # índices (idempotentes)
+    try:
+        usuarios.create_index("username")
+    except Exception:
+        pass
+
+    try:
+        citas.create_index([("day", 1), ("hour", 1), ("center", 1), ("cancel", 1)])
+    except Exception:
+        pass
+
+    # Centros por defecto si no hay ninguno
+    if centros.count_documents({}) == 0:
+        centros.insert_many([
+            {"name": "Centro de Salud Madrid Norte", "address": "Calle de la Salud, 123, Madrid"},
+            {"name": "Centro Médico Madrid Sur", "address": "Avenida de la Medicina, 456, Madrid"},
+        ])
+
+    print("[INIT] OK: BD Clinica lista (Atlas/local).")
 
 
 if __name__ == "__main__":
