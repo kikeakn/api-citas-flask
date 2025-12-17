@@ -1,5 +1,6 @@
 import os
 
+from flask import render_template
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -75,11 +76,10 @@ mongo_uri = (
 myclient = pymongo.MongoClient(mongo_uri)
 
 
-@app.route('/', methods=['GET'])
+@app.route("/", methods=["GET"])
 def hello():
-    # Si estás usando templates/index.html, puedes cambiar a render_template.
-    # Para que tus tests y tu web estén alineados, lo dejamos simple:
-    return 'Hello, World!'
+    return render_template("index.html")
+
 
 
 @app.route('/login', methods=['POST'])
