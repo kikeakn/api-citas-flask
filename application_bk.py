@@ -73,9 +73,6 @@ mongo_uri = (
     or "mongodb://localhost:27017/"
 )
 
-# VARIABLE CRÍTICA QUE FALTABA
-DB_NAME = os.environ.get("MONGODB_DB", "Clinica")
-
 myclient = pymongo.MongoClient(mongo_uri)
 
 
@@ -109,7 +106,7 @@ def login():
       401:
         description: Credenciales incorrectas
     """
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO: usa DB_NAME en lugar de "Clinica"
+    mydb = myclient["Clinica"]
     mycol = mydb["usuarios"]
 
     username = request.json.get('username', None)
@@ -164,7 +161,7 @@ def register():
         400:
             description: Solicitud incorrecta
     """
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["usuarios"]
 
     username = request.json.get('username', None)
@@ -216,7 +213,7 @@ def center():
     security:
       - Bearer: []
     """
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["centros"]
     centers = mycol.find({}, {"_id": 0})
     return jsonify(list(centers))
@@ -234,7 +231,7 @@ def profile():
         - Bearer: []
     """
     current_user = get_jwt_identity()
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["usuarios"]
     user = mycol.find_one({"username": current_user}, {"_id": 0, "password": 0})
     return jsonify(user)
@@ -252,7 +249,7 @@ def createDate():
         - Bearer: []
     """
     current_user = get_jwt_identity()
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO: Ahora DB_NAME está definida
+    mydb = myclient[DB_NAME]
     mycol = mydb["citas"]
     myCenters = mydb["centros"]
 
@@ -305,7 +302,7 @@ def createDate():
 @app.route("/date/getByDay", methods=['POST'])
 @jwt_required()
 def getDatesByDay():
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["citas"]
     day = request.json.get('day', None)
 
@@ -321,7 +318,7 @@ def getDatesByDay():
 @jwt_required()
 def getDateByUser():
     current_user = get_jwt_identity()
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["citas"]
 
     dates = mycol.find({"username": current_user, "cancel": {"$ne": 1}}, {"_id": 0})
@@ -332,7 +329,7 @@ def getDateByUser():
 @jwt_required()
 def deleteDate():
     current_user = get_jwt_identity()
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["citas"]
 
     date = request.json.get('date', None)
@@ -363,7 +360,7 @@ def deleteDate():
 @app.route("/dates", methods=['GET'])
 @jwt_required()
 def getDates():
-    mydb = myclient[DB_NAME]  # <-- CAMBIADO
+    mydb = myclient["Clinica"]
     mycol = mydb["citas"]
 
     dates = mycol.find({"cancel": {"$ne": 1}}, {"_id": 0})
