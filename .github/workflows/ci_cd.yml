@@ -2,14 +2,15 @@ name: CI/CD Flask Clinica
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      # Usamos el secret que ya tienes creado en GitHub
       MONGODB_URI: ${{ secrets.MONGODB_URI_EACON }}
+      MONGODB_DB: Clinica
+      CI_DB_SUFFIX: ${{ github.run_id }}_${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,9 +25,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Init DB (optional)
-        run: |
-          python 001_init_clinica.py || true
+      - name: Init DB
+        run: python migrations/001_init_clinica.py
 
       - name: Run tests
         run: pytest -vv
@@ -38,9 +38,6 @@ jobs:
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          # Se lo pasamos al servidor para que deploy.sh lo use y genere .env
-          MONGODB_URI_EACON: ${{ secrets.MONGODB_URI_EACON }}
         with:
           host: ${{ secrets.SERVER_IP }}
           username: eacon
@@ -48,4 +45,3 @@ jobs:
           script: |
             cd /var/www/alumnos/eacon/flask_app
             bash ./deploy.sh
-          envs: MONGODB_URI_EACON
