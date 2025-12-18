@@ -5,6 +5,7 @@
 - Inserta centros de ejemplo
 - Inserta un usuario por defecto (kike / kike1234)
 
+
 """
 
 import os
@@ -41,13 +42,16 @@ def init_indexes(db: Database) -> None:
 
 
 def seed_centers(db: Database) -> None:
-    """Inserta centros de ejemplo si aún no hay ninguno."""
     centers = db["centros"]
     if centers.count_documents({}) > 0:
         print("[*] Centros ya existen, no se insertan duplicados.")
         return
 
     docs = [
+        {
+            "name": "Centro de Salud Madrid Norte",
+            "address": "Calle Falsa 123, Madrid",
+        },
         {
             "name": "Centro de Salud Joyfe",
             "address": "Calle Vitalaza, 50, Madrid",
@@ -57,8 +61,10 @@ def seed_centers(db: Database) -> None:
             "address": "Calle Arturo Soria, 456, Madrid",
         },
     ]
+
     centers.insert_many(docs)
     print("[*] Insertados centros de ejemplo.")
+
 
 
 def seed_default_user(db: Database) -> None:
