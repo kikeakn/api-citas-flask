@@ -10,8 +10,7 @@ DB_NAME = "Clinica"
 
 def _setup_test_db():
     """
-    Prepara una base de datos en memoria para los tests usando mongomock.
-    No necesita mongod ni tocar nada del servidor.
+    Prepara una base de datos en memoria .
     """
     # 1) Crear un cliente de Mongo simulado
     mock_client = mongomock.MongoClient()
