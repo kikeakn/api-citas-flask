@@ -1,15 +1,79 @@
+<!-- templates/index.html -->
 <!doctype html>
 <html lang="es">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Clínica - Enrique</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <meta charset="utf-8">
+    <title>API Clínica – Enrique</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: #020617;
+        border-radius: 16px;
+        padding: 32px 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+        max-width: 520px;
+        width: 100%;
+        border: 1px solid #1f2937;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+      }
+
+      p {
+        margin: 4px 0;
+        color: #9ca3af;
+      }
+
+      .badge {
+        display: inline-block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #111827;
+        border: 1px solid #374151;
+        margin-bottom: 12px;
+        color: #e5e7eb;
+      }
+
+      a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
-    <main class="container">
-      <h1>Hello, World, soy Enrique</h1>
-      <p>API de Clínica desplegada ✅</p>
+    <main class="card">
+      <div class="badge">API Clínica · Flask</div>
+      <h1>Hello, World, soy Enrique 👋</h1>
+      <p>Bienvenido a mi despliegue de la API de citas de clínica.</p>
+      <p>
+        Los endpoints de la API siguen funcionando y la documentación Swagger
+        está disponible en
+        <a href="/apidocs/" target="_blank" rel="noreferrer">/apidocs/</a>.
+      </p>
     </main>
   </body>
 </html>
