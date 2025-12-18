@@ -49,10 +49,6 @@ def seed_centers(db: Database) -> None:
 
     docs = [
         {
-            "name": "Centro de Salud Madrid Norte",
-            "address": "Calle Ejemplo 1, Madrid",
-        },
-        {
             "name": "Centro de Salud Joyfe",
             "address": "Calle Vitalaza, 50, Madrid",
         },
@@ -60,9 +56,14 @@ def seed_centers(db: Database) -> None:
             "name": "Centro Médico Arturo Soria",
             "address": "Calle Arturo Soria, 456, Madrid",
         },
+        {
+            "name": "Centro de Salud Madrid Norte",
+            "address": "Calle Alcalá 123, Madrid",
+        }
     ]
     centers.insert_many(docs)
-    print("[*] Insertados centros de ejemplo.")
+    print("[*] Insertados centros de ejemplo (Joyfe / Arturo Soria / Madrid Norte).")
+
 
 
 def seed_default_user(db: Database) -> None:
