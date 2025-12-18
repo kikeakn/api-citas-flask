@@ -1,11 +1,10 @@
-"""Script de migración inicial para la base de datos Clinica.
+"""
+Script de migración inicial para la base de datos Clinica.
 
 - Crea las colecciones necesarias (usuarios, centros, citas)
 - Crea índices útiles
-- Inserta centros de ejemplo
+- Inserta centros de ejemplo (incluye 'Centro de Salud Madrid Norte')
 - Inserta un usuario por defecto (kike / kike1234)
-
-
 """
 
 import os
@@ -32,16 +31,17 @@ def init_indexes(db: Database) -> None:
     """Crea índices para mejorar consultas y evitar duplicados."""
 
     citas = db["citas"]
-    # Evitar citas duplicadas mismo día + hora (como hace la lógica de la API)
+    # Evitar citas duplicadas mismo día + hora + centro
     citas.create_index(
-        [("day", 1), ("hour", 1)],
-        name="uniq_day_hour",
+        [("day", 1), ("hour", 1), ("center", 1)],
+        name="uniq_day_hour_center",
         unique=True,
     )
     print("[*] Índices de 'citas' OK")
 
 
 def seed_centers(db: Database) -> None:
+    """Inserta centros de ejemplo si aún no hay ninguno."""
     centers = db["centros"]
     if centers.count_documents({}) > 0:
         print("[*] Centros ya existen, no se insertan duplicados.")
@@ -50,7 +50,7 @@ def seed_centers(db: Database) -> None:
     docs = [
         {
             "name": "Centro de Salud Madrid Norte",
-            "address": "Calle Falsa 123, Madrid",
+            "address": "Calle Ejemplo 1, Madrid",
         },
         {
             "name": "Centro de Salud Joyfe",
@@ -61,14 +61,12 @@ def seed_centers(db: Database) -> None:
             "address": "Calle Arturo Soria, 456, Madrid",
         },
     ]
-
     centers.insert_many(docs)
     print("[*] Insertados centros de ejemplo.")
 
 
-
 def seed_default_user(db: Database) -> None:
-    """CUsuario para pruebas manuales."""
+    """Inserta un usuario por defecto para pruebas manuales."""
     users = db["usuarios"]
     username = "kike"
 
