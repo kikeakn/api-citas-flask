@@ -249,29 +249,42 @@ def createDate():
         - Bearer: []
     """
     current_user = get_jwt_identity()
-    mydb = myclient["Clinica"]
+    mydb = myclient[DB_NAME]
     mycol = mydb["citas"]
     myCenters = mydb["centros"]
 
     date = request.json.get('date', None)
     center = request.json.get('center', None)
 
+    if not date or not center:
+        return jsonify({"msg": "Bad request"}), 400
+
+    # 1) Validar que el centro existe
     existing_center = myCenters.find_one({"name": center})
     if not existing_center:
         return jsonify({"msg": "Center not found"}), 400
 
+    # 2) Parsear la fecha con el formato exacto que usan los tests
     try:
-        date = datetime.strptime(date, '%d/%m/%Y %H:00:00')
-        day = date.strftime('%d/%m/%Y')
-        hour = date.strftime('%H')
+        date_obj = datetime.strptime(date, '%d/%m/%Y %H:00:00')
+        day = date_obj.strftime('%d/%m/%Y')
+        hour = date_obj.strftime('%H')
     except ValueError:
         return jsonify({"msg": "Invalid date format"}), 400
 
-    # Importante: permitir recrear si estaba cancelada (cancel != 1) y que sea por centro
-    existing_date = mycol.find_one({"day": day, "hour": hour, "center": center, "cancel": {"$ne": 1}})
+    # 3) Comprobar que no exista ya una cita para ese centro, día y hora
+    existing_date = mycol.find_one(
+        {
+            "day": day,
+            "hour": hour,
+            "center": center,
+            "cancel": {"$ne": 1},
+        }
+    )
     if existing_date:
         return jsonify({"msg": "Date and hour already taken"}), 400
 
+    # 4) Insertar la cita
     new_date = {
         "username": current_user,
         "day": day,
@@ -283,6 +296,7 @@ def createDate():
     mycol.insert_one(new_date)
 
     return jsonify({"msg": "Date created successfully"}), 200
+
 
 
 @app.route("/date/getByDay", methods=['POST'])

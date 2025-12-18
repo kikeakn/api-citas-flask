@@ -1,34 +1,87 @@
+# tests/conftest.py
 import os
-import uuid
+
 import pytest
-import pymongo
+from pymongo import MongoClient
+
 import application
+
+# Datos de conexión (los mismos que usas en el workflow)
+MONGO_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+BASE_DB_NAME = os.environ.get("MONGODB_DB", "Clinica")
+CI_DB_SUFFIX = os.environ.get("CI_DB_SUFFIX", "local_test")
+
+# Nombre de la base de datos SOLO para tests
+TEST_DB_NAME = f"{BASE_DB_NAME}_test_{CI_DB_SUFFIX}"
+
+
+def _reset_test_db(client: MongoClient):
+    """
+    Deja la base de datos de tests en un estado limpio e inicializado.
+    """
+    db = client[TEST_DB_NAME]
+
+    # Limpieza por si vienen datos de ejecuciones anteriores
+    for name in ["usuarios", "centros", "citas"]:
+        db.drop_collection(name)
+
+    # --- Centros de ejemplo (incluye el del test) ---
+    centers = db["centros"]
+    centers.insert_many(
+        [
+            {
+                "name": "Centro de Salud Madrid Norte",
+                "address": "Calle Falsa 123, Madrid",
+            },
+            {
+                "name": "Centro de Salud Joyfe",
+                "address": "Calle Vitalaza, 50, Madrid",
+            },
+            {
+                "name": "Centro Médico Arturo Soria",
+                "address": "Calle Arturo Soria, 456, Madrid",
+            },
+        ]
+    )
+
+    # --- Índices de citas ---
+    citas = db["citas"]
+    citas.create_index(
+        [("day", 1), ("hour", 1), ("center", 1)],
+        name="uniq_day_hour_center",
+        unique=True,
+    )
+
+    return db
 
 
 @pytest.fixture(scope="session")
 def mongo_client():
-    mongo_uri = os.environ.get("MONGODB_URI") or os.environ.get("MONGODB_URI_EACON")
-    if not mongo_uri:
-        raise RuntimeError("Falta MONGODB_URI (o MONGODB_URI_EACON) en variables de entorno")
-    return pymongo.MongoClient(mongo_uri)
+    """
+    Cliente Mongo real (Atlas) pero apuntando a la BD de tests.
+    """
+    client = MongoClient(MONGO_URI)
+    _reset_test_db(client)
+    return client
 
 
 @pytest.fixture(scope="session")
-def test_db_name():
-    # DB única por ejecución para no pisar datos
-    suffix = os.environ.get("CI_DB_SUFFIX") or str(uuid.uuid4()).replace("-", "")
-    return f"Clinica_test_{suffix}"
+def app(mongo_client):
+    """
+    Configura la aplicación Flask para que use la BD de tests.
+    """
+    # Forzamos a la app a usar la BD de pruebas
+    application.DB_NAME = TEST_DB_NAME
+    application.myclient = mongo_client
 
-
-@pytest.fixture(scope="function")
-def configure_app_db(monkeypatch, test_db_name):
-    # Cambiamos a nivel de app: usar DB de tests sin tocar producción
-    monkeypatch.setenv("MONGODB_DB", test_db_name)
-    yield
-
-
-@pytest.fixture(scope="function")
-def client(configure_app_db):
     application.app.config["TESTING"] = True
-    with application.app.test_client() as c:
+    return application.app
+
+
+@pytest.fixture()
+def client(app):
+    """
+    Test client de Flask. Se crea uno nuevo por cada test.
+    """
+    with app.test_client() as c:
         yield c
