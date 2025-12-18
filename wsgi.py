@@ -10,4 +10,4 @@ os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017/")
 os.environ.setdefault("MONGODB_DB", "Clinica")
 
 # Importamos la app de Flask desde application.py
-from application import app as application  # <-- WSGI necesita 'application'
+from application import app as application

@@ -50,7 +50,7 @@ myclient = pymongo.MongoClient(mongo_uri)
 # ================== RUTA RAÍZ ==================
 @app.route("/", methods=["GET"])
 def hello():
-    # Devolvemos una plantilla HTML con el mensaje personalizado
+    # Devolvemos una plantilla HTML
     return render_template("index.html")
 
 
