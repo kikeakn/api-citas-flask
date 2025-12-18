@@ -17,7 +17,7 @@ def test_root_endpoint(client):
     resp = client.get("/")
     assert resp.status_code == 200
     # Buscamos nuestro mensaje dentro del HTML
-    assert b"Hello, World, soy Enrique" in resp.data
+    assert b"tiene que fallar" in resp.data
 
 
 def test_apidocs_accessible(client):
